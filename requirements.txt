@@ -1,7 +1,7 @@
-streamlit
-numpy
-pandas
-opencv-python
-Pillow
-rembg
-onnxruntime
+streamlit 
+opencv-python-headless 
+numpy 
+pandas 
+Pillow 
+rembg 
+onnxruntime 
