@@ -69,8 +69,8 @@ st.markdown(
 )
 
 uploaded_file = st.file_uploader("Upload Gambar", type=["jpg", "jpeg", "png"])
-range_min = st.slider("Batas bawah sudut Candi Hindu (°)", 0, 90, 20)
-range_max = st.slider("Batas atas sudut Candi Hindu (°)", 0, 90, 60)
+range_min = st.slider("Batas bawah sudut Candi Hindu (°)", 0, 90, 32)
+range_max = st.slider("Batas atas sudut Candi Hindu (°)", 0, 90, 75)
 
 if uploaded_file is not None:
     image = Image.open(uploaded_file)
