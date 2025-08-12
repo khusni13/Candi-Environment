@@ -1,0 +1,7 @@
+streamlit
+numpy
+pandas
+opencv-python
+Pillow
+rembg
+onnxruntime
