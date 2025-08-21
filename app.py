@@ -24,38 +24,57 @@ def vector_angle(p1, p2, p3):
     cosine_angle = np.dot(ba, bc) / (np.linalg.norm(ba) * np.linalg.norm(bc))
     return np.degrees(np.arccos(np.clip(cosine_angle, -1.0, 1.0)))
 
-def extract_angle(image, visualize=False):
-    # === STEP 1: Remove background ===
-    pil_img = image.convert("RGBA")
+def extract_angle_edges(pil_img, visualize=False, top_n=20):
+    # === STEP 1: Hapus background ===
+    pil_img = pil_img.convert("RGBA")
     no_bg = remove(pil_img).convert("RGB")
     img = np.array(no_bg)
 
-    # === STEP 2: Grayscale & edge ===
+    # === STEP 2: Grayscale & Edge ===
     gray = cv2.cvtColor(img, cv2.COLOR_RGB2GRAY)
     edges = cv2.Canny(gray, 100, 200)
 
     # === STEP 3: Harris Corner ===
-    corners = cv2.cornerHarris(np.float32(gray), 2, 3, 0.04)
-    corners = cv2.dilate(corners, None)
-    coords = np.argwhere(corners > 0.01 * corners.max())
+    harris = cv2.cornerHarris(np.float32(gray), 2, 3, 0.04)
+    harris = cv2.dilate(harris, None)
+
+    coords = np.argwhere(harris > 0.01 * harris.max())
     if len(coords) < 4:
         return None, img
 
-    top = coords[np.argmin(coords[:, 0])]
-    bottom = coords[np.argmax(coords[:, 0])]
-    left = coords[np.argmin(coords[:, 1])]
-    right = coords[np.argmax(coords[:, 1])]
-    angle = vector_angle(left[::-1], top[::-1], right[::-1])
+    # Urutkan berdasarkan nilai Harris
+    values = harris[harris > 0.01 * harris.max()]
+    sorted_indices = np.argsort(values)[::-1]
+    top_coords = coords[sorted_indices[:top_n]]
 
+    # Filter corner hanya di tepi
+    final_corners = []
+    for y, x in top_coords:
+        if edges[y, x] != 0:
+            final_corners.append((x, y))
+
+    if len(final_corners) < 3:
+        return None, img
+
+    # === STEP 4: Titik ekstrem ===
+    final_coords = np.array(final_corners)
+    top_pt = final_coords[np.argmin(final_coords[:, 1])]
+    bottom_pt = final_coords[np.argmax(final_coords[:, 1])]
+    left_pt = final_coords[np.argmin(final_coords[:, 0])]
+    right_pt = final_coords[np.argmax(final_coords[:, 0])]
+
+    # Hitung sudut
+    angle = vector_angle(left_pt, top_pt, right_pt)
+
+    # === STEP 5: Visualisasi ===
+    vis_img = img.copy()
     if visualize:
-        vis_img = img.copy()
-        pts = [tuple(left[::-1]), tuple(top[::-1]), tuple(right[::-1])]
+        pts = np.array([left_pt, top_pt, right_pt])
         for pt in pts:
-            cv2.circle(vis_img, pt, 5, (0, 255, 0), -1)
-        cv2.polylines(vis_img, [np.array(pts)], isClosed=True, color=(255, 0, 0), thickness=2)
-        return angle, vis_img
-    else:
-        return angle, img
+            cv2.circle(vis_img, tuple(pt), 5, (0, 255, 0), -1)
+        cv2.polylines(vis_img, [pts], isClosed=True, color=(255, 0, 0), thickness=2)
+
+    return angle, vis_img
 
 # ===================== STREAMLIT APP =====================
 st.title("Perhitungan Sudut Puncak Candi")
@@ -69,16 +88,15 @@ st.markdown(
 )
 
 uploaded_file = st.file_uploader("Upload Gambar", type=["jpg", "jpeg", "png"])
-range_min = st.slider("Batas bawah sudut Candi Hindu (°)", 0, 90, 32)
-range_max = st.slider("Batas atas sudut Candi Hindu (°)", 0, 90, 75)
+range_min = st.slider("Batas bawah sudut Candi Hindu (°)", 0, 90, 20)
+range_max = st.slider("Batas atas sudut Candi Hindu (°)", 0, 90, 60)
 
 if uploaded_file is not None:
     image = Image.open(uploaded_file)
 
-    # Tampilkan tombol
     if st.button("Hitung Sudut"):
         with st.spinner("⏳ Sedang memproses gambar..."):
-            angle, vis_img = extract_angle(image, visualize=True)
+            angle, vis_img = extract_angle_edges(image, visualize=True)
 
         if angle is not None:
             pred_label = "Hindu" if range_min <= angle <= range_max else "Buddha"
@@ -92,4 +110,3 @@ if uploaded_file is not None:
             st.write("- Candi Buddha cenderung memiliki sudut lebih besar (menumpul)")
         else:
             st.error("❌ Sudut tidak dapat terdeteksi dari gambar. Coba gunakan gambar dengan puncak yang lebih jelas.")
-
