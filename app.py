@@ -65,17 +65,17 @@ def extract_angle(image, visualize=False):
 
 # ===================== STREAMLIT APP =====================
 st.title("Perhitungan Sudut Puncak Candi")
-st.markdown("Upload gambar candi untuk mendeteksi besar sudut puncak")
+st.markdown("Upload citra candi untuk mendeteksi besar sudut puncak")
 
-st.markdown("### 📤 Upload Gambar Candi")
+st.markdown("### 📤 Upload Citra Candi")
 st.markdown(
     """
-    ⚠️ **Pastikan gambar diambil dari sudut depan dan posisi tegak lurus terhadap puncak candi**  
+    ⚠️ **Pastikan citra diambil dari sudut depan dan posisi tegak lurus terhadap puncak candi**  
     Agar sistem dapat mendeteksi sudut secara akurat, hindari foto miring, terlalu dekat, atau dengan latar belakang yang kompleks.
     """
 )
 
-uploaded_file = st.file_uploader("Upload Gambar", type=["jpg", "jpeg", "png"])
+uploaded_file = st.file_uploader("Upload Citra", type=["jpg", "jpeg", "png"])
 range_min = st.slider("Batas bawah sudut Candi Hindu (°)", 0, 90, 32)
 range_max = st.slider("Batas atas sudut Candi Hindu (°)", 0, 90, 75)
 
@@ -83,7 +83,7 @@ if uploaded_file is not None:
     image = Image.open(uploaded_file)
 
     if st.button("Hitung Sudut"):
-        with st.spinner("⏳ Sedang memproses gambar..."):
+        with st.spinner("⏳ Sedang memproses citra..."):
             angle, vis_img = extract_angle(image, visualize=True)
 
         if angle is not None:
@@ -97,4 +97,4 @@ if uploaded_file is not None:
             st.write("- Candi Hindu cenderung memiliki sudut puncak lebih kecil (runcing)")
             st.write("- Candi Buddha cenderung memiliki sudut lebih besar (menumpul)")
         else:
-            st.error("❌ Sudut tidak dapat terdeteksi dari gambar. Coba gunakan gambar dengan puncak yang lebih jelas.")
+            st.error("❌ Sudut tidak dapat terdeteksi dari citra. Coba gunakan citra dengan puncak yang lebih jelas.")
